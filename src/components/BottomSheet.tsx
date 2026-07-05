@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   runOnJS,
@@ -22,6 +23,10 @@ export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(400);
   const backdropOpacity = useSharedValue(0);
+  // `height` is 0 with the keyboard hidden and goes negative (by the keyboard's
+  // height) while it's shown — added straight onto translateY, it lifts the
+  // whole sheet clear of the keyboard instead of leaving it covered.
+  const { height: keyboardHeight } = useReanimatedKeyboardAnimation();
 
   useEffect(() => {
     if (visible) {
@@ -31,7 +36,7 @@ export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
   }, [visible, translateY, backdropOpacity, theme.duration.base]);
 
   const sheetStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
+    transform: [{ translateY: translateY.value + keyboardHeight.value }],
   }));
   const backdropStyle = useAnimatedStyle(() => ({ opacity: backdropOpacity.value }));
 
