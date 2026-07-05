@@ -1,6 +1,6 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
@@ -15,11 +15,13 @@ import { Skeleton } from '../../../components/Skeleton';
 import { useToast } from '../../../components/Toast';
 import { categoryColor } from '../../../constants/categories';
 import { DEFAULT_CURRENCY_SYMBOL } from '../../../constants/config';
+import { useDebounce } from '../../../hooks/useDebounce';
 import { RootStackParamList } from '../../../navigation/types';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { EXPENSE_CATEGORIES, ExpenseCategory, PAYMENT_METHODS, PaymentMethod } from '../../../types/api';
 import { formatDate } from '../../../utils/format';
 import {
+  useCategorizeExpenseMutation,
   useCreateExpenseMutation,
   useGetExpenseQuery,
   useUpdateExpenseMutation,
@@ -49,6 +51,9 @@ export function ExpenseFormScreen({ navigation, route }: Props) {
   });
   const [createExpense, { isLoading: isCreating }] = useCreateExpenseMutation();
   const [updateExpense, { isLoading: isUpdating }] = useUpdateExpenseMutation();
+  const [categorizeExpense] = useCategorizeExpenseMutation();
+  const categoryTouchedRef = useRef(false);
+  const [aiSuggestedCategory, setAiSuggestedCategory] = useState(false);
 
   const { showToast } = useToast();
   const confirm = useConfirm();
@@ -102,6 +107,33 @@ export function ExpenseFormScreen({ navigation, route }: Props) {
       });
     }
   }, [existing, reset]);
+
+  const debouncedTitle = useDebounce(watch('title'), 600);
+
+  // AI-suggests a category from the title as the user types — only while adding
+  // (not editing an existing expense) and only until they pick a category themselves,
+  // so it never fights a deliberate manual choice.
+  useEffect(() => {
+    if (isEdit || categoryTouchedRef.current) return;
+    const trimmed = debouncedTitle.trim();
+    if (trimmed.length < 3) return;
+
+    let cancelled = false;
+    categorizeExpense({ title: trimmed })
+      .unwrap()
+      .then((category) => {
+        if (!cancelled && category && !categoryTouchedRef.current) {
+          setValue('category', category);
+          setAiSuggestedCategory(true);
+        }
+      })
+      .catch(() => {
+        // AI categorization unavailable/unconfigured — keep the default category
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedTitle, isEdit, categorizeExpense, setValue]);
 
   const onSubmit = async (values: FormValues) => {
     const payload = {
@@ -187,9 +219,16 @@ export function ExpenseFormScreen({ navigation, route }: Props) {
         />
 
         <View style={{ gap: theme.space.s }}>
-          <AppText variant="caption" tone="secondary">
-            Category
-          </AppText>
+          <View style={styles.categoryLabelRow}>
+            <AppText variant="caption" tone="secondary">
+              Category
+            </AppText>
+            {aiSuggestedCategory && (
+              <AppText variant="caption" tone="brand">
+                AI suggested
+              </AppText>
+            )}
+          </View>
           <View style={styles.chipWrap}>
             {EXPENSE_CATEGORIES.map((cat) => (
               <Chip
@@ -197,7 +236,11 @@ export function ExpenseFormScreen({ navigation, route }: Props) {
                 label={cat}
                 dotColor={categoryColor(theme, cat)}
                 selected={watch('category') === cat}
-                onPress={() => setValue('category', cat)}
+                onPress={() => {
+                  categoryTouchedRef.current = true;
+                  setAiSuggestedCategory(false);
+                  setValue('category', cat);
+                }}
               />
             ))}
           </View>
@@ -305,6 +348,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingHorizontal: 20, paddingBottom: 40 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  categoryLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   dateField: { minHeight: 52, justifyContent: 'center', paddingHorizontal: 14, borderWidth: StyleSheet.hairlineWidth },
   dateDoneButton: { alignSelf: 'flex-end', paddingVertical: 8, paddingHorizontal: 4 },

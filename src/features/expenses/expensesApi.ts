@@ -2,6 +2,7 @@ import { baseApi } from '../../api/baseApi';
 import {
   ApiEnvelope,
   Expense,
+  ExpenseCategory,
   ExpenseListParams,
   PaginationMeta,
 } from '../../types/api';
@@ -71,6 +72,12 @@ export const expensesApi = baseApi.injectEndpoints({
       ],
     }),
 
+    categorizeExpense: builder.mutation<ExpenseCategory | null, { title: string }>({
+      query: (body) => ({ url: '/expenses/categorize', method: 'POST', body }),
+      transformResponse: (response: ApiEnvelope<{ category: ExpenseCategory | null }>) =>
+        response.data.category,
+    }),
+
     deleteExpense: builder.mutation<null, string>({
       query: (id) => ({ url: `/expenses/${id}`, method: 'DELETE' }),
       invalidatesTags: (_r, _e, id) => [
@@ -88,4 +95,5 @@ export const {
   useCreateExpenseMutation,
   useUpdateExpenseMutation,
   useDeleteExpenseMutation,
+  useCategorizeExpenseMutation,
 } = expensesApi;

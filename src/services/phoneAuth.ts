@@ -19,6 +19,7 @@ export interface SendOtpResult {
   reason?: string;
 }
 
+
 let devSettingsApplied = false;
 
 /**
@@ -38,13 +39,12 @@ function applyDevAuthSettings(): void {
 }
 
 export async function sendPhoneOtp(phoneNumber: string): Promise<SendOtpResult> {
-  // applyDevAuthSettings();
+  applyDevAuthSettings();
 
   try {
     const confirmation = await signInWithPhoneNumber(getAuth(), phoneNumber);
     return { ok: true, confirmation };
   } catch (err) {
-    console.log("err is ==>",err)
     return { ok: false, reason: mapError(err) };
   }
 }
