@@ -30,24 +30,26 @@ export const OtpInput = forwardRef<OtpInputHandle, OtpInputProps>(function OtpIn
   }));
 
   const handleChange = (text: string, index: number) => {
-    // Support pasting the full code into one box
+    // Support pasting the full code into one box. `next` is computed from
+    // the `digits` closure (safe here — this only runs from an event
+    // handler, never mid-render) so onCodeChange can fire as a plain,
+    // separate call instead of as a side effect inside setDigits' updater —
+    // calling another component's setState from inside a state updater
+    // function triggers React's "Cannot update a component while rendering
+    // a different component" warning.
     if (text.length > 1) {
       const pasted = text.replace(/\D/g, '').slice(0, length).split('');
-      setDigits((prev) => {
-        const next = [...prev];
-        pasted.forEach((d, i) => (next[i] = d));
-        onCodeChange(next.join(''));
-        return next;
-      });
+      const next = [...digits];
+      pasted.forEach((d, i) => (next[i] = d));
+      setDigits(next);
+      onCodeChange(next.join(''));
       inputs.current[Math.min(pasted.length, length - 1)]?.focus();
       return;
     }
-    setDigits((prev) => {
-      const next = [...prev];
-      next[index] = text.replace(/\D/g, '');
-      onCodeChange(next.join(''));
-      return next;
-    });
+    const next = [...digits];
+    next[index] = text.replace(/\D/g, '');
+    setDigits(next);
+    onCodeChange(next.join(''));
     if (text && index < length - 1) inputs.current[index + 1]?.focus();
   };
 

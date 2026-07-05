@@ -22,8 +22,12 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
-/** How long the toast stays fully visible before it animates out. */
-const VISIBLE_MS = 2000;
+/**
+ * How long the toast stays fully visible before it animates out. Errors get
+ * more time — they're often longer/more important to actually read (e.g. a
+ * server message explaining what to fix) than a brief success confirmation.
+ */
+const VISIBLE_MS: Record<ToastKind, number> = { success: 2500, error: 4500 };
 const EXIT_MS = 220;
 
 /**
@@ -44,11 +48,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     (message: string, kind: ToastKind = 'success') => {
       if (hideTimer.current) clearTimeout(hideTimer.current);
       setToast({ message, kind });
+      const visibleMs = VISIBLE_MS[kind];
       translateY.value = withSpring(0, { damping: 18, stiffness: 220 });
       opacity.value = withTiming(1, { duration: 150 });
-      translateY.value = withDelay(VISIBLE_MS, withTiming(-140, { duration: EXIT_MS }));
-      opacity.value = withDelay(VISIBLE_MS, withTiming(0, { duration: EXIT_MS }));
-      hideTimer.current = setTimeout(() => setToast(null), VISIBLE_MS + EXIT_MS);
+      translateY.value = withDelay(visibleMs, withTiming(-140, { duration: EXIT_MS }));
+      opacity.value = withDelay(visibleMs, withTiming(0, { duration: EXIT_MS }));
+      hideTimer.current = setTimeout(() => setToast(null), visibleMs + EXIT_MS);
     },
     [translateY, opacity],
   );

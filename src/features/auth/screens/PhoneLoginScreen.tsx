@@ -1,14 +1,16 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { NativeModules, Pressable, StyleSheet, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../../../components/AppText';
 import { BackButton } from '../../../components/BackButton';
 import { Button } from '../../../components/Button';
+import { CountryCodePicker } from '../../../components/CountryCodePicker';
 import { Input } from '../../../components/Input';
 import { OtpInput, OtpInputHandle } from '../../../components/OtpInput';
 import { useToast } from '../../../components/Toast';
+import { COUNTRIES, Country } from '../../../constants/countries';
 import { AuthStackParamList } from '../../../navigation/types';
 import { confirmPhoneOtp, PhoneConfirmation, sendPhoneOtp } from '../../../services/phoneAuth';
 import { useTheme } from '../../../theme/ThemeProvider';
@@ -17,6 +19,19 @@ import { useLoginWithPhoneMutation } from '../authApi';
 type Props = NativeStackScreenProps<AuthStackParamList, 'PhoneLogin'>;
 
 const OTP_LENGTH = 6;
+const DEFAULT_COUNTRY = COUNTRIES.find((c) => c.code === 'IN') ?? COUNTRIES[0];
+
+/**
+ * Best-effort region guess from the device's locale (e.g. "en_IN" → "IN") —
+ * no extra native dependency needed, just RN core's I18nManager. Falls back
+ * to India (this app's default currency market) if nothing matches.
+ */
+function detectDefaultCountry(): Country {
+  const localeId: string | undefined =
+    NativeModules.I18nManager?.localeIdentifier ?? NativeModules.SettingsManager?.settings?.AppleLocale;
+  const region = localeId?.split(/[-_]/)[1]?.toUpperCase();
+  return COUNTRIES.find((c) => c.code === region) ?? DEFAULT_COUNTRY;
+}
 
 /** Phone sign-in: enter a number, confirm the SMS code — two steps, one screen. */
 export function PhoneLoginScreen({ navigation }: Props) {
@@ -26,28 +41,33 @@ export function PhoneLoginScreen({ navigation }: Props) {
   const [loginWithPhone, { isLoading: isLoggingIn }] = useLoginWithPhoneMutation();
 
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [country, setCountry] = useState<Country>(() => detectDefaultCountry());
+  const [nationalNumber, setNationalNumber] = useState('');
   const [code, setCode] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const confirmationRef = useRef<PhoneConfirmation | null>(null);
   const otpRef = useRef<OtpInputHandle>(null);
 
+  const fullPhoneNumber = `${country.dialCode}${nationalNumber.replace(/\D/g, '')}`;
+
   const handleSendCode = async () => {
-    const trimmed = phoneNumber.trim();
-    if (!trimmed.startsWith('+')) {
-      showToast('Include your country code, e.g. +1 555 123 4567', 'error');
+    if (nationalNumber.replace(/\D/g, '').length < 4) {
+      showToast('Enter a valid phone number', 'error');
       return;
     }
     setIsSending(true);
     try {
-      const result = await sendPhoneOtp(trimmed);
+      console.log("full phone is==>",fullPhoneNumber)
+      const result = await sendPhoneOtp(fullPhoneNumber);
       if (!result.ok || !result.confirmation) {
         showToast(result.reason ?? 'Could not send code', 'error');
         return;
       }
       confirmationRef.current = result.confirmation;
       setStep('otp');
+    }catch(err){
+      console.error(err);
     } finally {
       setIsSending(false);
     }
@@ -94,15 +114,25 @@ export function PhoneLoginScreen({ navigation }: Props) {
               <AppText tone="secondary">We'll text you a 6-digit code.</AppText>
             </View>
 
-            <Input
-              label="Phone number"
-              placeholder="+1 555 123 4567"
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
-              keyboardType="phone-pad"
-              textContentType="telephoneNumber"
-              autoFocus
-            />
+            <View style={{ gap: theme.space.xs }}>
+              <AppText variant="caption" tone="secondary">
+                Phone number
+              </AppText>
+              <View style={styles.phoneRow}>
+                <CountryCodePicker value={country} onChange={setCountry} />
+                <View style={styles.numberField}>
+                  <Input
+                    label=""
+                    placeholder="555 123 4567"
+                    value={nationalNumber}
+                    onChangeText={setNationalNumber}
+                    keyboardType="phone-pad"
+                    textContentType="telephoneNumber"
+                    autoFocus
+                  />
+                </View>
+              </View>
+            </View>
 
             <Button title="Send code" onPress={handleSendCode} loading={isSending} />
           </>
@@ -110,7 +140,7 @@ export function PhoneLoginScreen({ navigation }: Props) {
           <>
             <View style={{ gap: theme.space.xs }}>
               <AppText variant="h1">Enter the code</AppText>
-              <AppText tone="secondary">We sent a 6-digit code to {phoneNumber.trim()}</AppText>
+              <AppText tone="secondary">We sent a 6-digit code to {fullPhoneNumber}</AppText>
             </View>
 
             <OtpInput ref={otpRef} length={OTP_LENGTH} onCodeChange={setCode} />
@@ -140,6 +170,8 @@ export function PhoneLoginScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 24 },
+  phoneRow: { flexDirection: 'row', gap: 10 },
+  numberField: { flex: 1 },
   resend: { alignSelf: 'center' },
   pressed: { opacity: 0.5 },
 });

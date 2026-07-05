@@ -16,6 +16,7 @@
         {
           "client_id": "364838862855-s5jfm96h7ropm7kopn7ilbdp95e9911g.apps.googleusercontent.com",
           "client_type": 1,
+          
           "android_info": {
             "package_name": "com.myexpenses",
             "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"

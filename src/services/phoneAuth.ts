@@ -1,4 +1,4 @@
-import { getAuth, signInWithPhoneNumber } from '@react-native-firebase/auth';
+import { getAuth, getIdToken, signInWithPhoneNumber } from '@react-native-firebase/auth';
 
 /**
  * Firebase Phone Auth (SMS OTP). Like FCM push, this depends on the native
@@ -19,11 +19,32 @@ export interface SendOtpResult {
   reason?: string;
 }
 
+let devSettingsApplied = false;
+
+/**
+ * In dev builds only, skip Play Integrity/reCAPTCHA app verification —
+ * that whole chain is what makes a real phone number take minutes when
+ * Play Integrity isn't fully provisioned. Firebase renders a mock
+ * verifier instead, but only actually resolves fast for a phone number
+ * you've whitelisted under Firebase Console → Authentication → Sign-in
+ * method → Phone → "Phone numbers for testing" (see FIREBASE-SETUP.md
+ * Part C3) — a real, non-whitelisted number will still be rejected, just
+ * quickly instead of after a multi-minute stall.
+ */
+function applyDevAuthSettings(): void {
+  if (devSettingsApplied || !__DEV__) return;
+  getAuth().settings.appVerificationDisabledForTesting = true;
+  devSettingsApplied = true;
+}
+
 export async function sendPhoneOtp(phoneNumber: string): Promise<SendOtpResult> {
+  // applyDevAuthSettings();
+
   try {
     const confirmation = await signInWithPhoneNumber(getAuth(), phoneNumber);
     return { ok: true, confirmation };
   } catch (err) {
+    console.log("err is ==>",err)
     return { ok: false, reason: mapError(err) };
   }
 }
@@ -40,7 +61,7 @@ export async function confirmPhoneOtp(
 ): Promise<ConfirmOtpResult> {
   try {
     const credential = await confirmation.confirm(code);
-    const idToken = await credential?.user.getIdToken();
+    const idToken = credential?.user ? await getIdToken(credential.user) : undefined;
     if (!idToken) return { ok: false, reason: 'Could not complete sign-in' };
     return { ok: true, idToken };
   } catch (err) {
@@ -54,5 +75,12 @@ function mapError(err: unknown): string {
   if (code.includes('invalid-verification-code')) return 'Incorrect code — please try again';
   if (code.includes('too-many-requests')) return 'Too many attempts — try again later';
   if (code.includes('quota-exceeded')) return 'SMS limit reached — try again later';
+  // Firebase reports this when the Phone provider isn't enabled yet in
+  // Firebase Console (Authentication → Sign-in method) — surface it plainly
+  // rather than the generic fallback, since it's the single most likely
+  // cause during setup and otherwise looks identical to "not configured".
+  if (code.includes('operation-not-allowed')) {
+    return 'Phone sign-in is disabled for this project — enable it in Firebase Console';
+  }
   return 'Phone sign-in is not set up yet, or something went wrong';
 }
