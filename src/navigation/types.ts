@@ -32,12 +32,18 @@ export type MainTabParamList = {
   SettingsTab: undefined;
 };
 
-/** Fields a detected bank SMS can pre-fill on the Add form — the user still picks category/source and confirms. */
+/**
+ * Fields a detected bank SMS, or an AI-parsed quick-add sentence, can pre-fill
+ * on the Add form — the user still confirms (and can change) everything.
+ */
 export interface TransactionPrefill {
   title?: string;
   amount?: number;
   paymentMethod?: string;
   date?: string;
+  /** Only set by the AI quick-add flow (bank SMS carries no category/source signal). */
+  category?: string;
+  source?: string;
 }
 
 export type RootStackParamList = {

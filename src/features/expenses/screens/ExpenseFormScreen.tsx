@@ -52,7 +52,12 @@ export function ExpenseFormScreen({ navigation, route }: Props) {
   const [createExpense, { isLoading: isCreating }] = useCreateExpenseMutation();
   const [updateExpense, { isLoading: isUpdating }] = useUpdateExpenseMutation();
   const [categorizeExpense] = useCategorizeExpenseMutation();
-  const categoryTouchedRef = useRef(false);
+  const prefillCategory = (EXPENSE_CATEGORIES as readonly string[]).includes(prefill?.category ?? '')
+    ? (prefill!.category as ExpenseCategory)
+    : undefined;
+  // A category that already arrived via prefill (AI quick-add) counts as "touched" —
+  // the title-based auto-suggest below must not second-guess it.
+  const categoryTouchedRef = useRef(Boolean(prefillCategory));
   const [aiSuggestedCategory, setAiSuggestedCategory] = useState(false);
 
   const { showToast } = useToast();
@@ -69,7 +74,7 @@ export function ExpenseFormScreen({ navigation, route }: Props) {
     defaultValues: {
       title: prefill?.title ?? '',
       amount: prefill?.amount ? String(prefill.amount) : '',
-      category: 'Food',
+      category: prefillCategory ?? 'Food',
       paymentMethod: (PAYMENT_METHODS as readonly string[]).includes(prefill?.paymentMethod ?? '')
         ? (prefill!.paymentMethod as PaymentMethod)
         : 'Cash',

@@ -8,7 +8,13 @@ export const dashboardApi = baseApi.injectEndpoints({
       transformResponse: (response: ApiEnvelope<DashboardSummary>) => response.data,
       providesTags: ['Dashboard'],
     }),
+
+    dashboardInsight: builder.query<string | null, { month?: string }>({
+      query: (params) => ({ url: '/dashboard/insight', params }),
+      transformResponse: (response: ApiEnvelope<{ insight: string | null }>) => response.data.insight,
+      providesTags: ['Dashboard'],
+    }),
   }),
 });
 
-export const { useDashboardSummaryQuery } = dashboardApi;
+export const { useDashboardSummaryQuery, useDashboardInsightQuery } = dashboardApi;

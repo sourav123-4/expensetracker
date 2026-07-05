@@ -115,6 +115,16 @@ export interface DashboardSummary {
   savingsProgress: null;
 }
 
+/** Draft transaction extracted by AI from a free-text description ("coffee 150 UPI"). */
+export interface ParsedAiTransaction {
+  type: 'expense' | 'income';
+  title: string;
+  amount: number;
+  category?: ExpenseCategory;
+  paymentMethod?: PaymentMethod;
+  source?: IncomeSource;
+}
+
 export interface ExpenseListParams {
   page?: number;
   limit?: number;

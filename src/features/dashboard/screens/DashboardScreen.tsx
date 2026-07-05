@@ -5,14 +5,18 @@ import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import React, { useState } from 'react';
 import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useParseTransactionMutation } from '../../../api/aiApi';
 import { AppText } from '../../../components/AppText';
 import { BottomSheet } from '../../../components/BottomSheet';
+import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { DonutChart } from '../../../components/charts/DonutChart';
 import { TrendBarChart } from '../../../components/charts/TrendBarChart';
 import { EmptyState } from '../../../components/EmptyState';
 import { ArrowDownLeftIcon, ArrowUpRightIcon } from '../../../components/icons';
+import { Input } from '../../../components/Input';
 import { Skeleton } from '../../../components/Skeleton';
+import { useToast } from '../../../components/Toast';
 import { TransactionRow } from '../../../components/TransactionRow';
 import { BalanceCard } from '../components/BalanceCard';
 import { categoryColor } from '../../../constants/categories';
@@ -22,7 +26,7 @@ import { openExpenseForm, openIncomeForm } from '../../../navigation/navigateGlo
 import { useAppSelector } from '../../../hooks/redux';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { currentMonth, formatCurrency, formatMonthLabel } from '../../../utils/format';
-import { useDashboardSummaryQuery } from '../dashboardApi';
+import { useDashboardInsightQuery, useDashboardSummaryQuery } from '../dashboardApi';
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -68,10 +72,42 @@ export function DashboardScreen() {
   const user = useAppSelector((s) => s.auth.user);
   const [month, setMonth] = useState(currentMonth());
   const [pickerVisible, setPickerVisible] = useState(false);
+  const [quickAddVisible, setQuickAddVisible] = useState(false);
+  const [quickAddText, setQuickAddText] = useState('');
+  const { showToast } = useToast();
 
   const { data, isLoading, isFetching, isError, refetch } = useDashboardSummaryQuery({ month });
+  const { data: insight } = useDashboardInsightQuery({ month });
+  const [parseTransaction, { isLoading: isParsing }] = useParseTransactionMutation();
 
   const hasData = data && (data.totalIncome > 0 || data.totalExpense > 0);
+
+  const handleQuickAddSubmit = async () => {
+    const text = quickAddText.trim();
+    if (!text) return;
+    try {
+      const parsed = await parseTransaction({ text }).unwrap();
+      setQuickAddVisible(false);
+      setQuickAddText('');
+      const prefill = {
+        title: parsed.title,
+        amount: parsed.amount,
+        paymentMethod: parsed.paymentMethod,
+        category: parsed.category,
+        source: parsed.source,
+      };
+      if (parsed.type === 'income') {
+        openIncomeForm(navigation, { prefill });
+      } else {
+        openExpenseForm(navigation, { prefill });
+      }
+    } catch (err) {
+      const message =
+        (err as { data?: { message?: string } })?.data?.message ??
+        "Couldn't understand that — try including an amount";
+      showToast(message, 'error');
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.bgPage }]}>
@@ -118,6 +154,17 @@ export function DashboardScreen() {
               expense={data!.totalExpense}
             />
 
+            {insight && (
+              <View style={[styles.insightBar, { backgroundColor: theme.colors.brandSubtle, borderRadius: theme.radius.l }]}>
+                <AppText variant="caption" tone="brand">
+                  AI insight
+                </AppText>
+                <AppText variant="body" tone="secondary">
+                  {insight}
+                </AppText>
+              </View>
+            )}
+
             <View style={styles.quickActions}>
               <QuickAction
                 label="Add expense"
@@ -130,6 +177,20 @@ export function DashboardScreen() {
                 onPress={() => openIncomeForm(navigation)}
               />
             </View>
+
+            <Pressable
+              onPress={() => setQuickAddVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Quick add with AI"
+              style={[styles.quickAddBar, { backgroundColor: theme.colors.bgSurface, borderRadius: theme.radius.l }]}
+            >
+              <AppText variant="bodyStrong" tone="brand">
+                Quick add
+              </AppText>
+              <AppText variant="caption" tone="muted">
+                Describe a transaction in plain English
+              </AppText>
+            </Pressable>
 
             {hasData ? (
               <>
@@ -220,6 +281,29 @@ export function DashboardScreen() {
               <AppText variant="h2">›</AppText>
             </Pressable>
           </View>
+        </View>
+      </BottomSheet>
+
+      <BottomSheet visible={quickAddVisible} onClose={() => setQuickAddVisible(false)}>
+        <View style={{ gap: theme.space.m, paddingBottom: theme.space.m }}>
+          <AppText variant="h2">Quick add</AppText>
+          <AppText variant="caption" tone="secondary">
+            Describe the transaction — AI fills in the rest.
+          </AppText>
+          <Input
+            label="Transaction"
+            value={quickAddText}
+            onChangeText={setQuickAddText}
+            placeholder='e.g. "coffee 150 UPI" or "got 5000 salary"'
+            autoFocus
+            onSubmitEditing={handleQuickAddSubmit}
+          />
+          <Button
+            title="Add"
+            onPress={handleQuickAddSubmit}
+            loading={isParsing}
+            disabled={!quickAddText.trim()}
+          />
         </View>
       </BottomSheet>
     </View>
@@ -319,4 +403,6 @@ const styles = StyleSheet.create({
   },
   monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   monthNavBtn: { padding: 8 },
+  insightBar: { paddingVertical: 12, paddingHorizontal: 16, gap: 2 },
+  quickAddBar: { paddingVertical: 14, paddingHorizontal: 16, gap: 2 },
 });

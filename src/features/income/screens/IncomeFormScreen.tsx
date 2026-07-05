@@ -43,6 +43,9 @@ export function IncomeFormScreen({ navigation, route }: Props) {
 
   const [createIncome, { isLoading: isCreating }] = useCreateIncomeMutation();
   const [updateIncome, { isLoading: isUpdating }] = useUpdateIncomeMutation();
+  const prefillSource = (INCOME_SOURCES as readonly string[]).includes(prefill?.source ?? '')
+    ? (prefill!.source as IncomeSource)
+    : undefined;
 
   const { showToast } = useToast();
   const confirm = useConfirm();
@@ -58,7 +61,7 @@ export function IncomeFormScreen({ navigation, route }: Props) {
     defaultValues: {
       title: prefill?.title ?? '',
       amount: prefill?.amount ? String(prefill.amount) : '',
-      source: 'Salary',
+      source: prefillSource ?? 'Salary',
       description: '',
       date: prefill?.date ? new Date(prefill.date) : new Date(),
     },
