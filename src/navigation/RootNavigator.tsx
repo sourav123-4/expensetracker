@@ -7,6 +7,7 @@ import { useAppSelector } from '../hooks/redux';
 import { useTheme } from '../theme/ThemeProvider';
 import { AuthStack } from './AuthStack';
 import { MainTabs } from './MainTabs';
+import { navigationRef } from './navigationRef';
 import { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -69,7 +70,7 @@ export function RootNavigator() {
   };
 
   return (
-    <NavigationContainer theme={navTheme} linking={linking}>
+    <NavigationContainer ref={navigationRef} theme={navTheme} linking={linking}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
           <>

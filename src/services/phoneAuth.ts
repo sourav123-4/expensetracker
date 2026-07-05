@@ -49,6 +49,7 @@ export async function sendPhoneOtp(phoneNumber: string): Promise<SendOtpResult> 
   }
 }
 
+
 export interface ConfirmOtpResult {
   ok: boolean;
   idToken?: string;

@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- SMS auto-detect (expense/income from bank transaction alerts) — both requested
+         at runtime via PermissionsAndroid; the app functions normally if denied. -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
 
     <application
       android:name=".MainApplication"

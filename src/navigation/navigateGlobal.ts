@@ -1,4 +1,5 @@
 import type { NavigationProp, ParamListBase } from '@react-navigation/native';
+import type { TransactionPrefill } from './types';
 
 /**
  * Opens a root-level modal (ExpenseForm/IncomeForm) from anywhere in the
@@ -8,12 +9,13 @@ import type { NavigationProp, ParamListBase } from '@react-navigation/native';
  * it doesn't change runtime behavior. Closing the modal (`goBack`) always
  * returns to whichever screen opened it, regardless of which tab that was.
  */
-type GlobalNavigate = (screen: 'ExpenseForm' | 'IncomeForm', params?: { id?: string }) => void;
+type FormParams = { id?: string; prefill?: TransactionPrefill };
+type GlobalNavigate = (screen: 'ExpenseForm' | 'IncomeForm', params?: FormParams) => void;
 
-export function openExpenseForm(navigation: NavigationProp<ParamListBase>, params?: { id?: string }): void {
+export function openExpenseForm(navigation: NavigationProp<ParamListBase>, params?: FormParams): void {
   (navigation.navigate as unknown as GlobalNavigate)('ExpenseForm', params);
 }
 
-export function openIncomeForm(navigation: NavigationProp<ParamListBase>, params?: { id?: string }): void {
+export function openIncomeForm(navigation: NavigationProp<ParamListBase>, params?: FormParams): void {
   (navigation.navigate as unknown as GlobalNavigate)('IncomeForm', params);
 }

@@ -38,7 +38,7 @@ interface FormValues {
 }
 
 export function ExpenseFormScreen({ navigation, route }: Props) {
-  const { id } = route.params ?? {};
+  const { id, prefill } = route.params ?? {};
   const isEdit = Boolean(id);
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -62,12 +62,14 @@ export function ExpenseFormScreen({ navigation, route }: Props) {
   } = useForm<FormValues>({
     mode: 'onTouched',
     defaultValues: {
-      title: '',
-      amount: '',
+      title: prefill?.title ?? '',
+      amount: prefill?.amount ? String(prefill.amount) : '',
       category: 'Food',
-      paymentMethod: 'Cash',
+      paymentMethod: (PAYMENT_METHODS as readonly string[]).includes(prefill?.paymentMethod ?? '')
+        ? (prefill!.paymentMethod as PaymentMethod)
+        : 'Cash',
       description: '',
-      date: new Date(),
+      date: prefill?.date ? new Date(prefill.date) : new Date(),
       isRecurring: false,
     },
   });

@@ -32,11 +32,19 @@ export type MainTabParamList = {
   SettingsTab: undefined;
 };
 
+/** Fields a detected bank SMS can pre-fill on the Add form — the user still picks category/source and confirms. */
+export interface TransactionPrefill {
+  title?: string;
+  amount?: number;
+  paymentMethod?: string;
+  date?: string;
+}
+
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
   // Global "compose" modals — reachable from any tab, always return to
   // wherever the user was (not tied to the Expenses/Income tab's own stack).
-  ExpenseForm: { id?: string } | undefined;
-  IncomeForm: { id?: string } | undefined;
+  ExpenseForm: { id?: string; prefill?: TransactionPrefill } | undefined;
+  IncomeForm: { id?: string; prefill?: TransactionPrefill } | undefined;
 };

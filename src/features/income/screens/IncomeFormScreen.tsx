@@ -31,7 +31,7 @@ interface FormValues {
 }
 
 export function IncomeFormScreen({ navigation, route }: Props) {
-  const { id } = route.params ?? {};
+  const { id, prefill } = route.params ?? {};
   const isEdit = Boolean(id);
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -56,11 +56,11 @@ export function IncomeFormScreen({ navigation, route }: Props) {
   } = useForm<FormValues>({
     mode: 'onTouched',
     defaultValues: {
-      title: '',
-      amount: '',
+      title: prefill?.title ?? '',
+      amount: prefill?.amount ? String(prefill.amount) : '',
       source: 'Salary',
       description: '',
-      date: new Date(),
+      date: prefill?.date ? new Date(prefill.date) : new Date(),
     },
   });
 

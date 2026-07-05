@@ -9,11 +9,12 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { Provider } from 'react-redux';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { store } from './src/app/store';
-import { ConfirmProvider } from './src/components/ConfirmDialog';
+import { ConfirmProvider, useConfirm } from './src/components/ConfirmDialog';
 import { LockScreen } from './src/components/LockScreen';
 import { ToastProvider } from './src/components/Toast';
 import { userApi } from './src/features/settings/userApi';
 import { useAppSelector } from './src/hooks/redux';
+import { navigationRef } from './src/navigation/navigationRef';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { appLock } from './src/services/appLock';
 import {
@@ -25,7 +26,9 @@ import {
   handleNotificationEvent,
   restoreQuickAddIfEnabled,
 } from './src/services/quickAddNotification';
+import { listenForTransactionSms, restoreSmsAutoDetectIfEnabled } from './src/services/smsListener';
 import { ThemeProvider, useTheme } from './src/theme/ThemeProvider';
+import { formatCurrency } from './src/utils/format';
 
 /** Status bar icon color follows theme: dark icons on the light page, light icons on the dark page. */
 function StatusBarBridge() {
@@ -114,6 +117,42 @@ function NotificationBridge() {
   return null;
 }
 
+/**
+ * Restores the SMS listener on launch and, for each detected bank
+ * transaction, asks the user before doing anything — auto-adding entries
+ * silently would be surprising and error-prone (regex parsing isn't
+ * perfect). Confirming opens the Add form pre-filled so the user still
+ * picks a category/source and can edit anything before saving.
+ */
+function SmsAutoDetectBridge() {
+  const confirm = useConfirm();
+
+  useEffect(() => {
+    restoreSmsAutoDetectIfEnabled();
+
+    const unsubscribe = listenForTransactionSms(async (txn) => {
+      const ok = await confirm({
+        title: txn.type === 'expense' ? 'Add this expense?' : 'Add this income?',
+        message: `${formatCurrency(txn.amount)} — ${txn.title} (${txn.bank})`,
+        confirmText: 'Add',
+        cancelText: 'Ignore',
+      });
+      if (!ok || !navigationRef.isReady()) return;
+
+      const prefill = { title: txn.title, amount: txn.amount, paymentMethod: txn.paymentMethod, date: txn.date };
+      if (txn.type === 'expense') {
+        navigationRef.navigate('ExpenseForm', { prefill });
+      } else {
+        navigationRef.navigate('IncomeForm', { prefill });
+      }
+    });
+
+    return unsubscribe;
+  }, [confirm]);
+
+  return null;
+}
+
 function App() {
   return (
     <GestureHandlerRootView style={styles.root}>
@@ -125,6 +164,7 @@ function App() {
                 <ConfirmProvider>
                   <StatusBarBridge />
                   <NotificationBridge />
+                  <SmsAutoDetectBridge />
                   <AppLockGate>
                     <RootNavigator />
                   </AppLockGate>

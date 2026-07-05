@@ -15,6 +15,7 @@ export const StorageKeys = {
   onboardingDone: 'onboarding.done',
   quickAddEnabled: 'notifications.quickAdd',
   pushEnabled: 'notifications.push',
+  smsAutoDetectEnabled: 'sms.autoDetect',
 } as const;
 
 export const tokenStorage = {

@@ -34,6 +34,12 @@ import {
   isQuickAddEnabled,
   isQuickAddSupported,
 } from '../../../services/quickAddNotification';
+import {
+  disableSmsAutoDetect,
+  enableSmsAutoDetect,
+  isSmsAutoDetectEnabled,
+  isSmsAutoDetectSupported,
+} from '../../../services/smsListener';
 import { tokenStorage } from '../../../storage/mmkv';
 import { ThemePreference, useTheme } from '../../../theme/ThemeProvider';
 import { useLogoutMutation } from '../../auth/authApi';
@@ -70,6 +76,7 @@ export function SettingsScreen() {
   // Notification toggles
   const [quickAdd, setQuickAdd] = useState(isQuickAddEnabled());
   const [push, setPush] = useState(isPushEnabled());
+  const [smsAutoDetect, setSmsAutoDetect] = useState(isSmsAutoDetectEnabled());
 
   // Security
   const [lockEnabled, setLockEnabled] = useState(appLock.isEnabled());
@@ -121,6 +128,18 @@ export function SettingsScreen() {
     } else {
       disablePush();
       setPush(false);
+    }
+  };
+
+  const toggleSmsAutoDetect = async (value: boolean) => {
+    if (!isSmsAutoDetectSupported) return;
+    if (value) {
+      const ok = await enableSmsAutoDetect();
+      setSmsAutoDetect(ok);
+      showToast(ok ? 'Watching for bank SMS' : 'SMS permission denied', ok ? 'success' : 'error');
+    } else {
+      disableSmsAutoDetect();
+      setSmsAutoDetect(false);
     }
   };
 
@@ -345,6 +364,21 @@ export function SettingsScreen() {
               <TapRow label="Send test notification" value={isSendingTest ? 'Sending…' : ''} onPress={handleTestPush} />
             </>
           ) : null}
+        </Card>
+
+        <Card padded={false}>
+          <SectionHeader label="Auto-detect" />
+          <SwitchRow
+            label="Add from bank SMS"
+            caption={
+              isSmsAutoDetectSupported
+                ? 'Detect UPI/card transactions from bank SMS and prompt to add them'
+                : 'Android only — iOS blocks third-party apps from reading SMS'
+            }
+            value={smsAutoDetect}
+            disabled={!isSmsAutoDetectSupported}
+            onValueChange={toggleSmsAutoDetect}
+          />
         </Card>
 
         <Card padded={false}>
