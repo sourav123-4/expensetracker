@@ -1,97 +1,55 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# ExpenseFlow (Mobile)
 
-# Getting Started
+React Native CLI + TypeScript app for ExpenseFlow — a personal finance tracker. Pairs with the API in [`../backend`](../backend).
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Quick start
 
-## Step 1: Start Metro
+```bash
+npm install
+cd ios && bundle exec pod install && cd ..
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
-
-To start the Metro dev server, run the following command from the root of your React Native project:
-
-```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+npm start              # Metro
+npm run ios            # or: npm run android
 ```
 
-## Step 2: Build and run your app
+The app expects the backend on `http://localhost:8000/api/v1` (iOS simulator) or `http://10.0.2.2:8000/api/v1` (Android emulator) in dev — see [src/constants/config.ts](src/constants/config.ts). Start the backend first (see [../backend/README.md](../backend/README.md)).
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+## Architecture
 
-### Android
+Feature-based clean architecture:
 
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
+```
+src/
+  app/store.ts          Redux store (auth slice + RTK Query api)
+  navigation/            AuthStack, MainTabs, per-feature stacks, RootNavigator
+  features/
+    auth/                screens, authSlice (session), authApi (RTK Query)
+    dashboard/            screen, dashboardApi, chart wiring
+    expenses/             list/form/detail screens, expensesApi
+    income/                list/form screens, incomeApi
+    settings/              screen (theme toggle, logout)
+  components/            shared UI: Button, Card, Input, Chip, BottomSheet, Skeleton,
+                          EmptyState, Fab, SwipeableRow, TransactionRow, charts/*
+  theme/                  design tokens (tokens.ts) + ThemeProvider (light/dark)
+  api/baseApi.ts          RTK Query base with silent refresh-on-401 (mutex-guarded)
+  storage/mmkv.ts         token + settings persistence
+  hooks/, utils/, types/, constants/
 ```
 
-### iOS
+### Conventions
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+- **State**: server state lives in RTK Query (cache, refetch, invalidation tags); `authSlice` only holds the current user + `isAuthenticated`. `RootNavigator` swaps `AuthStack`/`MainTabs` purely off `isAuthenticated` — no manual `navigate()` calls on login/logout.
+- **Auth persistence**: access + refresh tokens live in MMKV (`storage/mmkv.ts`); `baseApi.ts` attaches the access token to every request and silently refreshes-and-retries once on a 401, ending the session if refresh fails.
+- **Theme**: all colors/spacing/typography come from `theme/tokens.ts` (validated chart palette — see `docs/design-system.md`); components read them via `useTheme()`, never hard-coded hex.
+- **Lists**: `FlatList` with pagination (`onEndReached`) and `RefreshControl`; every list has a loading (skeleton), error, and empty state.
+- **Swipe actions**: `components/SwipeableRow.tsx` is a small custom Reanimated pan-gesture row — `react-native-gesture-handler` v3 doesn't yet publicly re-export a `Swipeable` component.
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+## Testing
 
-```sh
-bundle install
+```bash
+npm test
 ```
 
-Then, and every time you update your native dependencies, run:
+## Roadmap
 
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+EMI, Credit Card, Loan, Budget, Savings Goals, Bills, Reports, Calendar, global search, notifications, OCR, biometrics/PIN, and full offline sync are designed for but not yet built — see [../docs/ROADMAP.md](../docs/ROADMAP.md). The dashboard summary already reserves response fields for EMI/credit-card/loan/savings so those screens can land without an API contract change.
