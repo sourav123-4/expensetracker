@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, Share, StyleSheet, Switch, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Switch,
+  TextInput,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../../../components/AppText';
 import { BottomSheet } from '../../../components/BottomSheet';
@@ -374,11 +384,16 @@ export function SettingsScreen() {
           onPress={handleLogout}
           disabled={isLoggingOut}
           accessibilityRole="button"
+          accessibilityState={{ disabled: isLoggingOut, busy: isLoggingOut }}
           style={[styles.logoutButton, { borderColor: theme.colors.statusCritical, borderRadius: theme.radius.m }]}
         >
-          <AppText variant="bodyStrong" tone="critical">
-            Log out
-          </AppText>
+          {isLoggingOut ? (
+            <ActivityIndicator color={theme.colors.statusCritical} />
+          ) : (
+            <AppText variant="bodyStrong" tone="critical">
+              Log out
+            </AppText>
+          )}
         </Pressable>
 
         <AppText variant="caption" tone="muted" style={styles.version}>
