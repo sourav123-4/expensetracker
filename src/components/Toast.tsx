@@ -8,9 +8,11 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../theme/ThemeProvider';
 import { AppText } from './AppText';
+
 
 type ToastKind = 'success' | 'error';
 

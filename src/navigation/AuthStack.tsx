@@ -3,6 +3,7 @@ import React from 'react';
 import { ForgotPasswordScreen } from '../features/auth/screens/ForgotPasswordScreen';
 import { LoginScreen } from '../features/auth/screens/LoginScreen';
 import { OnboardingScreen } from '../features/auth/screens/OnboardingScreen';
+import { PhoneLoginScreen } from '../features/auth/screens/PhoneLoginScreen';
 import { RegisterScreen } from '../features/auth/screens/RegisterScreen';
 import { ResetPasswordScreen } from '../features/auth/screens/ResetPasswordScreen';
 import { VerifyOtpScreen } from '../features/auth/screens/VerifyOtpScreen';
@@ -25,6 +26,7 @@ export function AuthStack() {
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} />
       <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+      <Stack.Screen name="PhoneLogin" component={PhoneLoginScreen} />
     </Stack.Navigator>
   );
 }

@@ -2,6 +2,6 @@ module.exports = {
   preset: '@react-native/jest-preset',
   setupFiles: ['./jest.setup.js'],
   transformIgnorePatterns: [
-    'node_modules/(?!(@react-native|react-native|@react-native-community|@react-navigation|react-native-.*|@reduxjs|react-redux|immer)/)',
+    'node_modules/(?!(@react-native|react-native|@react-native-community|@react-native-google-signin|@react-navigation|react-native-.*|@reduxjs|react-redux|immer)/)',
   ],
 };

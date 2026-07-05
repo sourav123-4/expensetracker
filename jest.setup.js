@@ -65,9 +65,28 @@ jest.mock('@react-native-firebase/messaging', () => ({
   onTokenRefresh: jest.fn(),
 }));
 
+jest.mock('@react-native-firebase/auth', () => ({
+  getAuth: jest.fn(() => {
+    throw new Error('Firebase not configured in tests');
+  }),
+  signInWithPhoneNumber: jest.fn(),
+}));
+
 jest.mock('react-native-biometrics', () =>
   jest.fn().mockImplementation(() => ({
     isSensorAvailable: jest.fn().mockResolvedValue({ available: false }),
     simplePrompt: jest.fn().mockResolvedValue({ success: false }),
   })),
 );
+
+jest.mock('@react-native-google-signin/google-signin', () => ({
+  GoogleSignin: {
+    configure: jest.fn(),
+    hasPlayServices: jest.fn().mockResolvedValue(true),
+    signIn: jest.fn(),
+    signOut: jest.fn().mockResolvedValue(undefined),
+  },
+  isErrorWithCode: jest.fn().mockReturnValue(false),
+  isSuccessResponse: jest.fn().mockReturnValue(false),
+  statusCodes: { SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED', IN_PROGRESS: 'IN_PROGRESS', PLAY_SERVICES_NOT_AVAILABLE: 'PLAY_SERVICES_NOT_AVAILABLE' },
+}));

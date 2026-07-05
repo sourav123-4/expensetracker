@@ -5,6 +5,7 @@ export type AuthStackParamList = {
   ForgotPassword: undefined;
   VerifyOtp: { email: string };
   ResetPassword: { email: string; resetToken: string };
+  PhoneLogin: undefined;
 };
 
 export type ExpensesStackParamList = {

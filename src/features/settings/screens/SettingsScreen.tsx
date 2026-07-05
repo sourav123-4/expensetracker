@@ -5,12 +5,14 @@ import { AppText } from '../../../components/AppText';
 import { BottomSheet } from '../../../components/BottomSheet';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
-import { ChevronRightIcon } from '../../../components/icons';
+import { ChevronRightIcon, PencilIcon } from '../../../components/icons';
+import { Input } from '../../../components/Input';
 import { useConfirm } from '../../../components/ConfirmDialog';
 import { useToast } from '../../../components/Toast';
 import { CURRENCIES } from '../../../constants/currencies';
 import { useAppSelector } from '../../../hooks/redux';
 import { appLock } from '../../../services/appLock';
+import { signOutGoogle } from '../../../services/googleAuth';
 import {
   disablePush,
   isPushEnabled,
@@ -73,6 +75,8 @@ export function SettingsScreen() {
   const [currencySheetVisible, setCurrencySheetVisible] = useState(false);
   const [restoreSheetVisible, setRestoreSheetVisible] = useState(false);
   const [restoreJson, setRestoreJson] = useState('');
+  const [editProfileVisible, setEditProfileVisible] = useState(false);
+  const [editName, setEditName] = useState('');
 
   useEffect(() => {
     appLock.biometricAvailability().then(setBiometricInfo);
@@ -209,6 +213,21 @@ export function SettingsScreen() {
     }
   };
 
+  const handleSaveName = async () => {
+    const trimmed = editName.trim();
+    if (!trimmed || trimmed === user?.name) {
+      setEditProfileVisible(false);
+      return;
+    }
+    try {
+      await updateProfile({ name: trimmed }).unwrap();
+      showToast('Profile updated');
+      setEditProfileVisible(false);
+    } catch {
+      showToast('Could not update profile', 'error');
+    }
+  };
+
   const handleLogout = async () => {
     const ok = await confirm({
       title: 'Log out?',
@@ -219,6 +238,7 @@ export function SettingsScreen() {
     if (ok) {
       const refreshToken = tokenStorage.getRefreshToken();
       logout({ refreshToken: refreshToken ?? '' });
+      signOutGoogle();
     }
   };
 
@@ -232,24 +252,35 @@ export function SettingsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.content, { gap: theme.space.l }]}
       >
-        <Card style={styles.profileCard}>
-          <View style={[styles.avatar, { backgroundColor: theme.colors.brandSubtle }]}>
-            <AppText variant="h2" tone="brand">
-              {(user?.name ?? '?')
-                .split(' ')
-                .map((part) => part[0])
-                .slice(0, 2)
-                .join('')
-                .toUpperCase()}
-            </AppText>
-          </View>
-          <View style={styles.profileText}>
-            <AppText variant="bodyStrong">{user?.name ?? '—'}</AppText>
-            <AppText tone="secondary" variant="caption">
-              {user?.email ?? '—'}
-            </AppText>
-          </View>
-        </Card>
+        <Pressable
+          onPress={() => {
+            setEditName(user?.name ?? '');
+            setEditProfileVisible(true);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Edit profile"
+          style={({ pressed }) => [pressed && styles.dimmed]}
+        >
+          <Card style={styles.profileCard}>
+            <View style={[styles.avatar, { backgroundColor: theme.colors.brandSubtle }]}>
+              <AppText variant="h2" tone="brand">
+                {(user?.name ?? '?')
+                  .split(' ')
+                  .map((part) => part[0])
+                  .slice(0, 2)
+                  .join('')
+                  .toUpperCase()}
+              </AppText>
+            </View>
+            <View style={styles.profileText}>
+              <AppText variant="bodyStrong">{user?.name ?? '—'}</AppText>
+              <AppText tone="secondary" variant="caption">
+                {user?.email ?? '—'}
+              </AppText>
+            </View>
+            <PencilIcon size={18} color={theme.colors.textMuted} />
+          </Card>
+        </Pressable>
 
         <Card style={{ gap: theme.space.m }}>
           <AppText variant="label" tone="muted">
@@ -354,6 +385,15 @@ export function SettingsScreen() {
           ExpenseFlow v1.0.0
         </AppText>
       </ScrollView>
+
+      {/* Edit profile */}
+      <BottomSheet visible={editProfileVisible} onClose={() => setEditProfileVisible(false)}>
+        <View style={{ gap: theme.space.m, paddingBottom: theme.space.m }}>
+          <AppText variant="h2">Edit profile</AppText>
+          <Input label="Full name" value={editName} onChangeText={setEditName} autoFocus autoCapitalize="words" />
+          <Button title="Save" onPress={handleSaveName} />
+        </View>
+      </BottomSheet>
 
       {/* Currency picker */}
       <BottomSheet visible={currencySheetVisible} onClose={() => setCurrencySheetVisible(false)}>

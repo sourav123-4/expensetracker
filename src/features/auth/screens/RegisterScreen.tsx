@@ -7,13 +7,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../../../components/AppText';
 import { BrandMark } from '../../../components/BrandMark';
 import { Button } from '../../../components/Button';
+import { GoogleButton } from '../../../components/GoogleButton';
 import { EyeIcon, EyeOffIcon } from '../../../components/icons';
 import { Input } from '../../../components/Input';
+import { OrDivider } from '../../../components/OrDivider';
+import { PhoneButton } from '../../../components/PhoneButton';
 import { useToast } from '../../../components/Toast';
 import { APP_NAME } from '../../../constants/config';
 import { AuthStackParamList } from '../../../navigation/types';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { useRegisterMutation } from '../authApi';
+import { useGoogleAuth } from '../useGoogleAuth';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
@@ -29,6 +33,7 @@ export function RegisterScreen({ navigation }: Props) {
   const [register, { isLoading }] = useRegisterMutation();
   const [showPassword, setShowPassword] = useState(false);
   const { showToast } = useToast();
+  const { handleGoogleSignIn, isSigningIn } = useGoogleAuth();
 
   const {
     control,
@@ -145,6 +150,12 @@ export function RegisterScreen({ navigation }: Props) {
         />
 
         <Button title="Create account" onPress={handleSubmit(onSubmit)} loading={isLoading} />
+
+        <OrDivider />
+
+        <GoogleButton onPress={handleGoogleSignIn} loading={isSigningIn} />
+
+        <PhoneButton onPress={() => navigation.navigate('PhoneLogin')} />
 
         <Pressable
           onPress={() => navigation.goBack()}

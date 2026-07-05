@@ -28,6 +28,24 @@ export const authApi = baseApi.injectEndpoints({
       },
     }),
 
+    loginWithGoogle: builder.mutation<AuthPayload, { idToken: string }>({
+      query: (body) => ({ url: '/auth/google', method: 'POST', body }),
+      transformResponse: (response: ApiEnvelope<AuthPayload>) => response.data,
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        const { data } = await queryFulfilled;
+        dispatch(sessionStarted(data));
+      },
+    }),
+
+    loginWithPhone: builder.mutation<AuthPayload, { idToken: string }>({
+      query: (body) => ({ url: '/auth/phone', method: 'POST', body }),
+      transformResponse: (response: ApiEnvelope<AuthPayload>) => response.data,
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        const { data } = await queryFulfilled;
+        dispatch(sessionStarted(data));
+      },
+    }),
+
     logout: builder.mutation<null, { refreshToken: string }>({
       query: (body) => ({ url: '/auth/logout', method: 'POST', body }),
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
@@ -68,6 +86,8 @@ export const authApi = baseApi.injectEndpoints({
 export const {
   useLoginMutation,
   useRegisterMutation,
+  useLoginWithGoogleMutation,
+  useLoginWithPhoneMutation,
   useLogoutMutation,
   useForgotPasswordMutation,
   useVerifyOtpMutation,
