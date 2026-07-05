@@ -1,12 +1,12 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../../../components/AppText';
+import { BackButton } from '../../../components/BackButton';
 import { Button } from '../../../components/Button';
-import { ArrowLeftIcon } from '../../../components/icons';
 import { Input } from '../../../components/Input';
 import { useToast } from '../../../components/Toast';
 import { AuthStackParamList } from '../../../navigation/types';
@@ -45,14 +45,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, gap: theme.space.l }]}
         keyboardShouldPersistTaps="handled"
       >
-        <Pressable
-          onPress={() => navigation.goBack()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          hitSlop={10}
-        >
-          <ArrowLeftIcon color={theme.colors.textPrimary} />
-        </Pressable>
+        <BackButton onPress={() => navigation.goBack()} />
 
         <View style={{ gap: theme.space.xs }}>
           <AppText variant="h1">Forgot password?</AppText>

@@ -1,11 +1,11 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useRef, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../../../components/AppText';
+import { BackButton } from '../../../components/BackButton';
 import { Button } from '../../../components/Button';
-import { ArrowLeftIcon } from '../../../components/icons';
 import { useToast } from '../../../components/Toast';
 import { AuthStackParamList } from '../../../navigation/types';
 import { useTheme } from '../../../theme/ThemeProvider';
@@ -83,14 +83,7 @@ export function VerifyOtpScreen({ navigation, route }: Props) {
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, gap: theme.space.l }]}
         keyboardShouldPersistTaps="handled"
       >
-        <Pressable
-          onPress={() => navigation.goBack()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          hitSlop={10}
-        >
-          <ArrowLeftIcon color={theme.colors.textPrimary} />
-        </Pressable>
+        <BackButton onPress={() => navigation.goBack()} />
 
         <View style={{ gap: theme.space.xs }}>
           <AppText variant="h1">Enter the code</AppText>
@@ -114,10 +107,28 @@ export function VerifyOtpScreen({ navigation, route }: Props) {
                 styles.otpBox,
                 {
                   borderColor: digit ? theme.colors.brandPrimary : theme.colors.borderHairline,
+                  borderWidth: digit || theme.dark ? 1.5 : 0,
                   color: theme.colors.textPrimary,
                   backgroundColor: theme.colors.bgSurface,
                   borderRadius: theme.radius.m,
                 },
+                // Boxes lift off the page with a soft shadow, matching the
+                // app's card language; border color/width communicates the
+                // filled state on top. The shadow must stay on regardless of
+                // content — toggling Android's `elevation` on the exact
+                // frame a digit is typed promotes/demotes the EditText to
+                // its own hardware layer, which can silently drop keyboard
+                // focus (the box looks fine but stops accepting input).
+                !theme.dark &&
+                  Platform.select({
+                    ios: {
+                      shadowColor: '#3730A3',
+                      shadowOpacity: 0.08,
+                      shadowRadius: 8,
+                      shadowOffset: { width: 0, height: 3 },
+                    },
+                    android: { elevation: 2 },
+                  }),
               ]}
             />
           ))}
@@ -130,7 +141,11 @@ export function VerifyOtpScreen({ navigation, route }: Props) {
           disabled={code.length !== OTP_LENGTH}
         />
 
-        <Pressable onPress={onResend} disabled={isResending} style={styles.resend}>
+        <Pressable
+          onPress={onResend}
+          disabled={isResending}
+          style={({ pressed }) => [styles.resend, pressed && styles.pressed]}
+        >
           <AppText variant="caption" tone="brand">
             {isResending ? 'Resending…' : "Didn't get a code? Resend"}
           </AppText>
@@ -152,4 +167,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   resend: { alignSelf: 'center' },
+  pressed: { opacity: 0.5 },
 });

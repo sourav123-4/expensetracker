@@ -3,10 +3,11 @@ import React from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../../../components/AppText';
+import { BackButton } from '../../../components/BackButton';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { useConfirm } from '../../../components/ConfirmDialog';
-import { ArrowLeftIcon, CopyIcon, PencilIcon, TrashIcon } from '../../../components/icons';
+import { CopyIcon, PencilIcon, TrashIcon } from '../../../components/icons';
 import { Skeleton } from '../../../components/Skeleton';
 import { useToast } from '../../../components/Toast';
 import { categoryColor } from '../../../constants/categories';
@@ -88,9 +89,7 @@ export function ExpenseDetailScreen({ navigation, route }: Props) {
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, gap: theme.space.l }]}
     >
       <View style={styles.headerRow}>
-        <Pressable onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Back" hitSlop={10}>
-          <ArrowLeftIcon color={theme.colors.textPrimary} />
-        </Pressable>
+        <BackButton onPress={() => navigation.goBack()} accessibilityLabel="Back" />
         <View style={styles.headerActions}>
           <Pressable
             onPress={() => openExpenseForm(navigation, { id })}
@@ -110,7 +109,7 @@ export function ExpenseDetailScreen({ navigation, route }: Props) {
       </View>
 
       <View style={{ alignItems: 'center', gap: 6 }}>
-        <AppText variant="display" tabular>
+        <AppText variant="display" tone="critical" tabular>
           -{formatCurrency(expense.amount)}
         </AppText>
         <AppText tone="secondary">{expense.title}</AppText>

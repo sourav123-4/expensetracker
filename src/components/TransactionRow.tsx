@@ -63,7 +63,7 @@ export function TransactionRow({
           {category} · {formatDate(date)}
         </AppText>
       </View>
-      <AppText variant="bodyStrong" tone={type === 'income' ? 'good' : 'primary'} tabular>
+      <AppText variant="bodyStrong" tone={type === 'income' ? 'good' : 'critical'} tabular>
         {type === 'income' ? '+' : '-'}
         {formatCurrency(amount)}
       </AppText>

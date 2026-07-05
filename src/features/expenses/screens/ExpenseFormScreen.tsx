@@ -6,10 +6,10 @@ import { Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../../../components/AppText';
+import { BackButton } from '../../../components/BackButton';
 import { Button } from '../../../components/Button';
 import { Chip } from '../../../components/Chip';
 import { useConfirm } from '../../../components/ConfirmDialog';
-import { ArrowLeftIcon } from '../../../components/icons';
 import { Input } from '../../../components/Input';
 import { Skeleton } from '../../../components/Skeleton';
 import { useToast } from '../../../components/Toast';
@@ -149,16 +149,9 @@ export function ExpenseFormScreen({ navigation, route }: Props) {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.headerRow}>
-          <Pressable
-            onPress={handleClose}
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-            hitSlop={10}
-          >
-            <ArrowLeftIcon color={theme.colors.textPrimary} />
-          </Pressable>
+          <BackButton onPress={handleClose} accessibilityLabel="Close" />
           <AppText variant="h1">{isEdit ? 'Edit expense' : 'Add expense'}</AppText>
-          <View style={{ width: 24 }} />
+          <View style={{ width: 40 }} />
         </View>
 
         <Controller

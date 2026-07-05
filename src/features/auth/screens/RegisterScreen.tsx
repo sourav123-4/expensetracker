@@ -5,10 +5,12 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../../../components/AppText';
+import { BrandMark } from '../../../components/BrandMark';
 import { Button } from '../../../components/Button';
-import { ArrowLeftIcon, EyeIcon, EyeOffIcon } from '../../../components/icons';
+import { EyeIcon, EyeOffIcon } from '../../../components/icons';
 import { Input } from '../../../components/Input';
 import { useToast } from '../../../components/Toast';
+import { APP_NAME } from '../../../constants/config';
 import { AuthStackParamList } from '../../../navigation/types';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { useRegisterMutation } from '../authApi';
@@ -57,18 +59,12 @@ export function RegisterScreen({ navigation }: Props) {
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, gap: theme.space.l }]}
         keyboardShouldPersistTaps="handled"
       >
-        <Pressable
-          onPress={() => navigation.goBack()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          hitSlop={10}
-        >
-          <ArrowLeftIcon color={theme.colors.textPrimary} />
-        </Pressable>
-
-        <View style={{ gap: theme.space.xs }}>
-          <AppText variant="h1">Create your account</AppText>
-          <AppText tone="secondary">Takes less than a minute.</AppText>
+        <View style={{ gap: theme.space.m }}>
+          <BrandMark />
+          <View style={{ gap: theme.space.xs }}>
+            <AppText variant="display">{APP_NAME}</AppText>
+            <AppText tone="secondary">Create your account — takes less than a minute.</AppText>
+          </View>
         </View>
 
         <Controller
@@ -153,7 +149,7 @@ export function RegisterScreen({ navigation }: Props) {
         <Pressable
           onPress={() => navigation.goBack()}
           accessibilityRole="button"
-          style={styles.loginLink}
+          style={({ pressed }) => [styles.loginLink, pressed && styles.pressed]}
         >
           <AppText tone="secondary">
             Already have an account? <AppText tone="brand">Log in</AppText>
@@ -167,4 +163,5 @@ export function RegisterScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 24, paddingBottom: 24 },
   loginLink: { alignSelf: 'center', marginTop: 8 },
+  pressed: { opacity: 0.5 },
 });

@@ -123,7 +123,7 @@ export function LoginScreen({ navigation }: Props) {
         <Pressable
           onPress={() => navigation.navigate('ForgotPassword')}
           accessibilityRole="button"
-          style={styles.forgotLink}
+          style={({ pressed }) => [styles.forgotLink, pressed && styles.pressed]}
         >
           <AppText variant="caption" tone="brand">
             Forgot password?
@@ -135,7 +135,7 @@ export function LoginScreen({ navigation }: Props) {
         <Pressable
           onPress={() => navigation.navigate('Register')}
           accessibilityRole="button"
-          style={styles.registerLink}
+          style={({ pressed }) => [styles.registerLink, pressed && styles.pressed]}
         >
           <AppText tone="secondary">
             Don't have an account? <AppText tone="brand">Sign up</AppText>
@@ -150,4 +150,5 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 24, paddingBottom: 24 },
   forgotLink: { alignSelf: 'flex-end' },
   registerLink: { alignSelf: 'center', marginTop: 8 },
+  pressed: { opacity: 0.5 },
 });
