@@ -2,7 +2,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useParseTransactionMutation } from '../../../api/aiApi';
@@ -13,7 +13,7 @@ import { Card } from '../../../components/Card';
 import { DonutChart } from '../../../components/charts/DonutChart';
 import { TrendBarChart } from '../../../components/charts/TrendBarChart';
 import { EmptyState } from '../../../components/EmptyState';
-import { ArrowDownLeftIcon, ArrowUpRightIcon } from '../../../components/icons';
+import { ArrowDownLeftIcon, ArrowUpRightIcon, MicIcon } from '../../../components/icons';
 import { Input } from '../../../components/Input';
 import { Skeleton } from '../../../components/Skeleton';
 import { useToast } from '../../../components/Toast';
@@ -24,6 +24,7 @@ import { ExpenseCategory } from '../../../types/api';
 import { ExpensesStackParamList, IncomeStackParamList, MainTabParamList } from '../../../navigation/types';
 import { openExpenseForm, openIncomeForm } from '../../../navigation/navigateGlobal';
 import { useAppSelector } from '../../../hooks/redux';
+import { isVoiceInputSupported, startVoiceInput, stopVoiceInput } from '../../../services/voiceInput';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { currentMonth, formatCurrency, formatMonthLabel } from '../../../utils/format';
 import { useDashboardInsightQuery, useDashboardSummaryQuery } from '../dashboardApi';
@@ -74,6 +75,8 @@ export function DashboardScreen() {
   const [pickerVisible, setPickerVisible] = useState(false);
   const [quickAddVisible, setQuickAddVisible] = useState(false);
   const [quickAddText, setQuickAddText] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const voiceCleanupRef = useRef<() => void>(() => {});
   const { showToast } = useToast();
 
   const { data, isLoading, isFetching, isError, refetch } = useDashboardSummaryQuery({ month });
@@ -81,6 +84,38 @@ export function DashboardScreen() {
   const [parseTransaction, { isLoading: isParsing }] = useParseTransactionMutation();
 
   const hasData = data && (data.totalIncome > 0 || data.totalExpense > 0);
+
+  // Closing the sheet mid-listen (or leaving the screen) shouldn't leave the
+  // recognizer running in the background.
+  useEffect(() => {
+    if (!quickAddVisible) {
+      stopVoiceInput();
+      voiceCleanupRef.current();
+      setIsListening(false);
+    }
+  }, [quickAddVisible]);
+  useEffect(() => () => {
+    stopVoiceInput();
+    voiceCleanupRef.current();
+  }, []);
+
+  const handleMicPress = async () => {
+    if (isListening) {
+      stopVoiceInput();
+      return;
+    }
+    setIsListening(true);
+    voiceCleanupRef.current = await startVoiceInput({
+      onPartialResult: setQuickAddText,
+      onResult: setQuickAddText,
+      onError: (message) => showToast(message, 'error'),
+      onEnd: () => {
+        setIsListening(false);
+        voiceCleanupRef.current();
+        voiceCleanupRef.current = () => {};
+      },
+    });
+  };
 
   const handleQuickAddSubmit = async () => {
     const text = quickAddText.trim();
@@ -297,7 +332,27 @@ export function DashboardScreen() {
             placeholder='e.g. "coffee 150 UPI" or "got 5000 salary"'
             autoFocus
             onSubmitEditing={handleQuickAddSubmit}
+            trailing={
+              isVoiceInputSupported ? (
+                <Pressable
+                  onPress={handleMicPress}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel={isListening ? 'Stop voice input' : 'Start voice input'}
+                >
+                  <MicIcon
+                    size={20}
+                    color={isListening ? theme.colors.statusCritical : theme.colors.textMuted}
+                  />
+                </Pressable>
+              ) : undefined
+            }
           />
+          {isListening && (
+            <AppText variant="caption" tone="critical">
+              Listening…
+            </AppText>
+          )}
           <Button
             title="Add"
             onPress={handleQuickAddSubmit}

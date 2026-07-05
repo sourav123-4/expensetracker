@@ -216,3 +216,18 @@ export function PhoneIcon({ size = 24, color, strokeWidth = 2 }: IconProps) {
     </Svg>
   );
 }
+
+export function MicIcon({ size = 24, color, strokeWidth = 2 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x="9" y="2" width="6" height="11" rx="3" stroke={color} strokeWidth={strokeWidth} />
+      <Path
+        d="M5 11a7 7 0 0 0 14 0M12 18v3"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
